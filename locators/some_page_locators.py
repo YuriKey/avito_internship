@@ -1,0 +1,2 @@
+class SomePageLocators:
+    pass
