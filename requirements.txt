@@ -4,8 +4,10 @@ setuptools
 wheel
 selenium~=4.25.0
 pytest~=8.3.3
+pytest-check~=2.5.0
 self~=2020.12.3
 requests~=2.32.3
 python-dotenv~=1.0.1
 PyAutoGUI~=0.9.54
-allure-pytest~=2.13.5
+faker~=36.1.1
+

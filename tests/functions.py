@@ -1,90 +1,107 @@
 import random
-from pprint import pprint
 import requests
 from data import urls
+from faker import Faker
+
+fake = Faker()
+
+
+def make_request(method, url, json=None):
+    """
+    Выполняет запрос и возвращает ответ.
+    :param method: Метод запроса (GET, POST и т.д.)
+    :param url: URL для запроса
+    :param json: JSON-данные для POST-запросов
+    :return: Объект Response
+    """
+    return requests.request(method, url, json=json)
 
 
 def get_items_by_id(item_id):
-    """Функция получает данные о item_id.
-    Принимает item_id.
-    Возвращает json по item."""
-    response_func = requests.get(f'{urls.BASE_URL}/api/1/item/{item_id}')
-    return response_func
+    """
+    Получает объект по его ID.
+    :param item_id: UUID сущности
+    :return: Объект Response
+    """
+    url = f'{urls.BASE_URL}/api/1/item/{item_id}'
+    return make_request('GET', url)
 
 
-def create_items():
+def get_items_by_seller(seller_id):
     """
-    Функция создает item.
-    Значения seller_id, price случайны.
-    Возвращает json по item и введенные данные.
+    Получает список элементов, созданных конкретным продавцом.
+    :param seller_id: ID продавца
+    :return: Словарь с элементами и статус-кодом
     """
-    seller_id = random.randint(111111, 999999)
-    price = random.randint(1, 1000)
+    url = f'{urls.BASE_URL}/api/1/{seller_id}/item'
+    response = make_request('GET', url)
+    return {"items": response.json(), "status_code": response.status_code}
+
+
+def get_statistics(item_id):
+    """
+    Получает статистику по конкретному элементу.
+    :param item_id: UUID элемента
+    :return: Объект Response
+    """
+    url = f'{urls.BASE_URL}/api/1/statistic/{item_id}'
+    return make_request('GET', url)
+
+
+def get_unic_seller_id():
+    """
+    Находит продавца, у которого нет элементов.
+    :return: ID продавца
+    """
+    while True:
+        seller_id = random.randint(111111, 999999)
+        url = f'{urls.BASE_URL}/api/1/{seller_id}/item'
+        response = make_request('GET', url)
+        if len(response.json()) == 0:
+            return seller_id
+
+
+def create_item(seller_id=None, price=None, name=None, statistics=None):
+    """
+    Создает новый элемент с заданными или случайными данными.
+    :param seller_id: ID продавца
+    :param price: Цена элемента
+    :param name: Название элемента
+    :param statistics: Статистика элемента
+    :return: Словарь с ответом и входными данными
+    """
+    if not seller_id:
+        seller_id = random.randint(111111, 999999)
+    if not price:
+        price = random.randint(1, 1000)
+    if not name:
+        name = fake.text(20)
+    if not statistics:
+        statistics = {
+            "contacts": random.randint(1, 10),
+            "likes": random.randint(1, 10),
+            "viewCount": random.randint(1, 10)
+        }
+
     data = {
         "sellerID": seller_id,
-        "name": "book",
+        "name": name,
         "price": price,
-        "statistics": {
-            "contacts": 1,
-            "likes": 2,
-            "viewCount": 3
-        }
+        "statistics": statistics
+    }
+    url = f"{urls.BASE_URL}/api/1/item"
+    response = make_request('POST', url, json=data)
+    return {
+        "response": response.json(),
+        "status_code": response.status_code,
+        "data": data
     }
 
-    response = requests.post(f"{urls.BASE_URL}/api/1/item", json=data)
-    return response, data
 
-
-def get_items_count(seller_id):
+def create_item_by_unic_seller_id():
     """
-    Функция определяет количество items у seller.
-    Принимает seller_id.
-    Возвращает количество items.
+    Создает элемент у продавца, у которого нет элементов.
+    :return: Словарь с ответом и входными данными
     """
-    response = requests.get(f'{urls.BASE_URL}/api/1/{seller_id}/item')
-    return len(response.json())
-
-
-def find_unic_seller_id():
-    """
-    Функция находит seller, у которого нет items.
-    Возвращает seller_id:int.
-    """
-    seller_id = random.randint(111111, 999999)
-    # response = requests.get(f'{urls.BASE_URL}/api/1/seller/{seller_id}')
-    response = requests.get(f'{urls.BASE_URL}/api/1/{seller_id}/item')
-    items_count = len(response.json())
-    if items_count == 0:
-        return seller_id
-    else:
-        find_unic_seller_id()
-
-
-def find_seller_id(seller_id):
-    """
-    Функция находит seller по seller_id.
-    Возвращает sellers items.
-    """
-    response = requests.get(f'{urls.BASE_URL}/api/1/{seller_id}/item')
-    return response
-
-
-def create_items_by_unic_seller_id(seller_id=find_unic_seller_id()):
-    """
-    Функция создает item у seller, у которого нет items.
-    Принимает seller_id, сгенерированный функцией find_unic_seller_id().
-    Возвращает json ответа на post-запрос и введенные данные.
-    """
-    price = random.randint(1, 1000)
-    data = {
-        "sellerID": seller_id,
-        "name": "another_book",
-        "price": price,
-        "statistics": {
-            "contacts": 4,
-            "likes": 5,
-            "viewCount": 6
-        }
-    }
-    response = requests.post(f"{urls.BASE_URL}/api/1/item", json=data)
-    return response, data
+    seller_id = get_unic_seller_id()
+    return create_item(seller_id=seller_id)

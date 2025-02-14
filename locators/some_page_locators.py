@@ -1,2 +1,0 @@
-class SomePageLocators:
-    pass
