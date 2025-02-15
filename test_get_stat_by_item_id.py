@@ -1,4 +1,4 @@
-from tests import functions as f
+import functions as f
 import pytest_check as check
 
 
